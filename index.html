@@ -104,13 +104,13 @@
         <div id="totAmt" style="font-size:27px;font-weight:800;color:var(--green);">0,00 ₴</div>
     </div>
 
-    <!-- Список -->
+    <!-- Список операцій (поточний квартал) -->
     <div style="padding:16px 16px 8px;font-size:12px;font-weight:700;color:var(--text3);" id="txTitle">Операції • Q2</div>
     <div id="txlist" class="txlist"></div>
 
     <button class="fab" onclick="openAddModal()">+ Додати дохід</button>
 
-    <!-- Modal -->
+    <!-- Modal редагування/додавання -->
     <div class="modal" id="addModal">
         <div class="modal-content">
             <h2 id="modalTitle" style="font-size:22px;font-weight:800;margin-bottom:24px;">Новий дохід</h2>
@@ -138,9 +138,7 @@
             if (prompt("Введіть пароль:") === PASSWORD) {
                 localStorage.setItem("fop_logged_in", "true");
                 document.getElementById("loginScreen").style.display = "none";
-            } else {
-                alert("Невірний пароль");
-            }
+            } else alert("Невірний пароль");
         }
 
         if (localStorage.getItem("fop_logged_in") !== "true") {
@@ -215,6 +213,7 @@
             `).join('');
         }
 
+        // Відкриття модального вікна для додавання/редагування
         window.openAddModal = (id = null) => {
             editingId = id;
             $('modalTitle').textContent = id ? "Редагувати дохід" : "Новий дохід";
@@ -271,21 +270,58 @@
             }
         };
 
+        // Перегляд ВСІХ записів з можливістю редагування та видалення
         window.showAllTransactions = () => {
-            alert("Функція перегляду всіх записів ще в розробці.\n\nВикористовуйте редагування в квартальному списку.");
+            let html = `<div style="padding:20px 24px;border-bottom:1px solid var(--border);font-size:18px;font-weight:700;">Всі доходи за 2026 рік</div>`;
+
+            const grouped = {1:[],2:[],3:[],4:[]};
+            txs.forEach(t => grouped[parseInt(t.quarter || 1)].push(t));
+
+            Object.keys(grouped).forEach(q => {
+                if (grouped[q].length === 0) return;
+                html += `<div style="padding:16px 20px;background:var(--bg2);font-weight:700;">Q${q} — ${['Січень–Березень','Квітень–Червень','Липень–Вересень','Жовтень–Грудень'][q-1]}</div>`;
+                
+                grouped[q].forEach(t => {
+                    html += `
+                        <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                            <div>
+                                <div style="font-weight:600;">${t.desc || 'Дохід'}</div>
+                                <div style="font-size:13px;color:var(--text3);">${t.date}</div>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:20px;">
+                                <div style="font-weight:700;color:var(--green);">+${fmt(t.amount)}</div>
+                                <div class="tx-actions">
+                                    <span onclick="editIncome('${t.id}');event.stopImmediatePropagation()" style="color:#7c6cfc;cursor:pointer;">✏️</span>
+                                    <span onclick="deleteIncome('${t.id}');event.stopImmediatePropagation()" style="color:var(--red);cursor:pointer;">✕</span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+            });
+
+            if (txs.length === 0) html += `<div style="padding:80px 20px;text-align:center;color:var(--text3);">Поки немає записів</div>`;
+
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            modalContent.innerHTML = html + `<button onclick="this.closest('.modal').classList.remove('open')" style="width:100%;padding:18px;background:transparent;color:var(--text3);border:none;border-top:1px solid var(--border);">Закрити</button>`;
+
+            const modal = document.createElement('div');
+            modal.className = 'modal open';
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+
+            modal.addEventListener('click', e => {
+                if (e.target === modal) modal.remove();
+            });
         };
 
-        // Головний слухач даних
+        // Реалтайм оновлення
         db.collection("transactions").orderBy("timestamp", "desc").onSnapshot(snap => {
             txs = snap.docs.map(d => ({id: d.id, ...d.data()}));
             renderDashboard();
             $('ls').classList.add('gone');
-        }, error => {
-            console.error("Firebase error:", error);
-            $('ls').innerHTML = `<div style="color:red;">Помилка підключення до бази даних</div>`;
         });
 
-        // Тема
         if (localStorage.getItem('fop_theme') === 'light') {
             document.body.classList.add('light');
             $('themeBtn').textContent = '🌙';
