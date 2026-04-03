@@ -6,7 +6,7 @@
     <title>ФОП Фінанси</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
         :root {
             --bg: #1c1c1e; --bg2: #2c2c2e; --card: #2c2c2e; --border: #48484a;
             --text: #ffffff; --text3: #ebebf599; --accent: #7c6cfc;
@@ -20,18 +20,20 @@
         body {
             background: var(--bg); color: var(--text);
             font-family: 'Inter', sans-serif;
-            min-height: 100dvh; max-width: 430px; margin: 0 auto; padding-bottom: 180px;
+            min-height: 100dvh; max-width: 430px; margin: 0 auto; padding-bottom: 200px;
         }
         #loginScreen { position: fixed; inset: 0; background: var(--bg); z-index: 10000; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
-        #ls { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .hero { margin: 16px; background: linear-gradient(135deg, #7c6cfc, #a78bfa); border-radius: 28px; padding: 28px 20px; color: white; cursor: pointer; }
+        #ls { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.6s; }
+        #ls.gone { opacity: 0; pointer-events: none; }
+        .hero { margin: 16px; background: linear-gradient(135deg, #7c6cfc, #a78bfa); border-radius: 28px; padding: 28px 20px; color: white; box-shadow: 0 10px 40px rgba(124,108,252,.4); cursor: pointer; }
         .hero-amount { font-size: 38px; font-weight: 800; letter-spacing: -1.2px; margin: 8px 0 12px; }
         .card, .total { background: var(--card); border: 1px solid var(--border); border-radius: 22px; padding: 18px; margin: 0 16px 16px; }
         .tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 0 16px; }
         .txlist { padding: 0 16px; }
         .txitem { padding: 16px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .fab { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; border: none; border-radius: 9999px; padding: 16px 36px; font-size: 17px; font-weight: 700; z-index: 100; }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 300; }
+        .tx-actions { display: flex; gap: 16px; font-size: 20px; }
+        .fab { position: fixed; bottom: max(24px, env(safe-area-inset-bottom,24px)); left: 50%; transform: translateX(-50%); background: var(--accent); color: white; border: none; border-radius: 9999px; padding: 16px 36px; font-size: 17px; font-weight: 700; box-shadow: 0 12px 35px rgba(124,108,252,.55); z-index: 100; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(12px); display: none; align-items: center; justify-content: center; z-index: 300; }
         .modal.open { display: flex; }
         .modal-content { background: var(--card); width: 100%; max-width: 420px; border-radius: 28px; padding: 28px 24px; margin: 20px; }
         .ifield { width: 100%; background: var(--bg2); border: 1.5px solid var(--border); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; font-size: 23px; font-weight: 700; }
@@ -43,7 +45,7 @@
     <div id="loginScreen">
         <div style="font-size:52px;">💼</div>
         <h1 style="font-size:28px;font-weight:800;">ФОП Фінанси</h1>
-        <button onclick="login()" style="background:var(--accent);color:white;border:none;border-radius:18px;padding:16px 60px;font-size:17px;font-weight:700;">Увійти</button>
+        <button onclick="login()" style="background:var(--accent);color:white;border:none;border-radius:18px;padding:16px 60px;font-size:17px;font-weight:700;cursor:pointer;">Увійти</button>
     </div>
 
     <div id="ls">
@@ -51,22 +53,58 @@
         <div style="font-size:20px;font-weight:700;">Завантаження...</div>
     </div>
 
-    <!-- Header, Hero, Ліміт, Податки, Список — без змін (скорочено для зручності) -->
-    <div style="position:sticky;top:0;z-index:50;background:var(--bg);padding:44px 16px 12px;border-bottom:1px solid var(--border);">
+    <!-- Header -->
+    <div style="position:sticky;top:0;z-index:50;background:var(--bg);padding:max(env(safe-area-inset-top,44px),44px) 16px 12px;border-bottom:1px solid var(--border);backdrop-filter:blur(20px);">
         <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-size:13px;font-weight:700;color:var(--text3);">ФОП · 3 група · 5% + 1%</div>
             <div onclick="toggleTheme()" id="themeBtn" style="font-size:24px;cursor:pointer;">☀️</div>
         </div>
     </div>
 
+    <!-- Hero -->
     <div class="hero" onclick="showAllTransactions()">
         <div style="font-size:13px;opacity:0.85;">ДОХІД ЗА 2026 РІК</div>
         <div class="hero-amount" id="heroAmt">0,00 ₴</div>
         <div id="heroCount" style="opacity:0.85;">0 записів</div>
     </div>
 
-    <!-- Ліміт, Податки, total — можна залишити як у попередній версії, я скоротив для відповіді -->
+    <!-- Ліміт -->
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-weight:600;">Ліміт доходу 2026</span>
+            <span id="limPct" style="font-weight:700;color:var(--accent);">0.00%</span>
+        </div>
+        <div style="height:9px;background:var(--bg2);border-radius:999px;overflow:hidden;">
+            <div id="barInner" style="height:100%;background:linear-gradient(90deg,var(--accent),#c4b5ff);width:0%;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:13px;">
+            <span id="limUsed">0,00 ₴</span>
+            <span id="limLeft" style="color:var(--text3);">залишок</span>
+        </div>
+    </div>
 
+    <!-- Податки -->
+    <div style="padding:0 16px 8px;font-size:12px;font-weight:700;color:var(--text3);" id="taxTitle">ДО СПЛАТИ • Q2</div>
+    <div class="tgrid">
+        <div class="card" style="margin:0;padding:18px 16px;">
+            <div style="color:var(--text3);">Єдиний податок</div>
+            <div id="epAmt" style="font-size:22px;font-weight:800;color:var(--accent);margin-top:8px;">0,00 ₴</div>
+        </div>
+        <div class="card" style="margin:0;padding:18px 16px;">
+            <div style="color:var(--text3);">Військовий збір</div>
+            <div id="vzAmt" style="font-size:22px;font-weight:800;color:#ff6b9d;margin-top:8px;">0,00 ₴</div>
+        </div>
+    </div>
+
+    <div class="total" style="margin-top:8px;">
+        <div>
+            <div style="font-weight:700;">РАЗОМ ДО СПЛАТИ</div>
+            <div style="font-size:13px;color:var(--text3);">за поточний квартал</div>
+        </div>
+        <div id="totAmt" style="font-size:27px;font-weight:800;color:var(--green);">0,00 ₴</div>
+    </div>
+
+    <!-- Список -->
     <div style="padding:16px 16px 8px;font-size:12px;font-weight:700;color:var(--text3);" id="txTitle">Операції • Q2</div>
     <div id="txlist" class="txlist"></div>
 
@@ -100,10 +138,14 @@
             if (prompt("Введіть пароль:") === PASSWORD) {
                 localStorage.setItem("fop_logged_in", "true");
                 document.getElementById("loginScreen").style.display = "none";
-            } else alert("Невірний пароль");
+            } else {
+                alert("Невірний пароль");
+            }
         }
 
-        if (localStorage.getItem("fop_logged_in") !== "true") document.getElementById("loginScreen").style.display = "flex";
+        if (localStorage.getItem("fop_logged_in") !== "true") {
+            document.getElementById("loginScreen").style.display = "flex";
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyDp5G9VN2iX60uUV3AtW8RyU0W26kTeF2M",
@@ -130,9 +172,9 @@
         }
 
         function renderDashboard() {
-            const yearTotal = txs.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+            const yearTotal = txs.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
             const qTxs = txs.filter(t => parseInt(t.quarter || 1) === currentQ);
-            const qTotal = qTxs.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+            const qTotal = qTxs.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
 
             $('heroAmt').textContent = fmt(yearTotal);
             $('heroCount').textContent = `${txs.length} запис${txs.length === 1 ? '' : 'ів'}`;
@@ -141,8 +183,9 @@
             $('barInner').style.width = pct + '%';
             $('limPct').textContent = pct.toFixed(2) + '%';
             $('limUsed').textContent = fmt(yearTotal);
-            $('limLeft').textContent = `залишок: ${fmt(10091049 - yearTotal)}`;
+            $('limLeft').textContent = `залишок: ${fmt(Math.max(0, 10091049 - yearTotal))}`;
 
+            $('taxTitle').textContent = `ДО СПЛАТИ • Q${currentQ}`;
             $('epAmt').textContent = fmt(qTotal * 0.05);
             $('vzAmt').textContent = fmt(qTotal * 0.01);
             $('totAmt').textContent = fmt(qTotal * 0.06);
@@ -150,26 +193,29 @@
             $('txTitle').textContent = `Операції • Q${currentQ}`;
 
             const list = $('txlist');
-            list.innerHTML = qTxs.length === 0 
-                ? `<div style="padding:60px 20px;text-align:center;color:var(--text3);">Поки немає записів у цьому кварталі</div>`
-                : qTxs.map(t => `
-                    <div class="txitem">
-                        <div>
-                            <div style="font-weight:600;">${t.desc || 'Дохід'}</div>
-                            <div style="font-size:12px;color:var(--text3);">${t.date || ''}</div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:20px;">
-                            <div style="font-weight:700;color:var(--green);">+${fmt(t.amount)}</div>
-                            <div class="tx-actions">
-                                <span onclick="editIncome('${t.id}'); event.stopImmediatePropagation()" style="color:#7c6cfc;cursor:pointer;">✏️</span>
-                                <span onclick="deleteIncome('${t.id}'); event.stopImmediatePropagation()" style="color:var(--red);cursor:pointer;">✕</span>
-                            </div>
+            if (qTxs.length === 0) {
+                list.innerHTML = `<div style="padding:60px 20px;text-align:center;color:var(--text3);">Поки немає записів у цьому кварталі</div>`;
+                return;
+            }
+
+            list.innerHTML = qTxs.map(t => `
+                <div class="txitem">
+                    <div>
+                        <div style="font-weight:600;">${t.desc || 'Дохід'}</div>
+                        <div style="font-size:12px;color:var(--text3);">${t.date || ''}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:20px;">
+                        <div style="font-weight:700;color:var(--green);">+${fmt(t.amount)}</div>
+                        <div class="tx-actions">
+                            <span onclick="editIncome('${t.id}');event.stopImmediatePropagation()" style="color:#7c6cfc;cursor:pointer;">✏️</span>
+                            <span onclick="deleteIncome('${t.id}');event.stopImmediatePropagation()" style="color:var(--red);cursor:pointer;">✕</span>
                         </div>
                     </div>
-                `).join('');
+                </div>
+            `).join('');
         }
 
-        window.openAddModal = function(id = null) {
+        window.openAddModal = (id = null) => {
             editingId = id;
             $('modalTitle').textContent = id ? "Редагувати дохід" : "Новий дохід";
             $('addModal').classList.add('open');
@@ -177,7 +223,7 @@
             if (id) {
                 const tx = txs.find(t => t.id === id);
                 if (tx) {
-                    $('inpAmount').value = tx.amount;
+                    $('inpAmount').value = tx.amount || '';
                     $('inpDesc').value = tx.desc || '';
                     $('inpDate').value = tx.fullDate || '';
                     $('inpQuarter').value = tx.quarter || currentQ;
@@ -190,17 +236,17 @@
             }
         };
 
-        window.closeAddModal = function() {
+        window.closeAddModal = () => {
             $('addModal').classList.remove('open');
             editingId = null;
         };
 
-        window.saveIncome = function() {
+        window.saveIncome = () => {
             const amount = parseFloat($('inpAmount').value);
             if (!amount) return alert("Введіть суму");
 
             const data = {
-                amount: amount,
+                amount,
                 desc: $('inpDesc').value.trim() || "Дохід",
                 quarter: parseInt($('inpQuarter').value),
                 fullDate: $('inpDate').value,
@@ -208,40 +254,41 @@
                 timestamp: new Date().toISOString()
             };
 
-            if (editingId) {
-                db.collection("transactions").doc(editingId).update(data).then(() => {
-                    closeAddModal();
-                    console.log("Запис оновлено");
-                }).catch(err => alert("Помилка: " + err.message));
-            } else {
-                db.collection("transactions").add(data).then(() => closeAddModal());
-            }
+            const promise = editingId 
+                ? db.collection("transactions").doc(editingId).update(data)
+                : db.collection("transactions").add(data);
+
+            promise.then(() => {
+                closeAddModal();
+            }).catch(err => alert("Помилка збереження: " + err.message));
         };
 
-        window.editIncome = id => openAddModal(id);
+        window.editIncome = (id) => openAddModal(id);
 
-        window.deleteIncome = id => {
-            if (confirm("Видалити запис?")) {
+        window.deleteIncome = (id) => {
+            if (confirm("Видалити цей запис?")) {
                 db.collection("transactions").doc(id).delete();
             }
         };
 
-        window.showAllTransactions = function() {
-            // ... (залиш свою стару функцію showAllTransactions без змін)
-            alert("Функція перегляду всіх записів працює. Якщо потрібно — скажи, покращу.");
+        window.showAllTransactions = () => {
+            alert("Функція перегляду всіх записів ще в розробці.\n\nВикористовуйте редагування в квартальному списку.");
         };
 
-        // Реалтайм оновлення + примусове оновлення після змін
-        db.collection("transactions").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-            txs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Головний слухач даних
+        db.collection("transactions").orderBy("timestamp", "desc").onSnapshot(snap => {
+            txs = snap.docs.map(d => ({id: d.id, ...d.data()}));
             renderDashboard();
-            document.getElementById("ls").classList.add("gone");
+            $('ls').classList.add('gone');
+        }, error => {
+            console.error("Firebase error:", error);
+            $('ls').innerHTML = `<div style="color:red;">Помилка підключення до бази даних</div>`;
         });
 
-        // Ініціалізація теми
+        // Тема
         if (localStorage.getItem('fop_theme') === 'light') {
             document.body.classList.add('light');
-            document.getElementById('themeBtn').textContent = '🌙';
+            $('themeBtn').textContent = '🌙';
         }
     </script>
 </body>
